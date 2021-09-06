@@ -1,0 +1,7 @@
+.dockerignore
+Dockerfile
+*.md
+.shadow-cljs
+target
+node_modules
+npm-debug.log
