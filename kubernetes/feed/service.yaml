@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: feed
+  namespace: app
+  labels:
+    app: feed
+spec:
+  type: NodePort
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3000
+      nodePort: 31000
+  selector:
+    app: feed

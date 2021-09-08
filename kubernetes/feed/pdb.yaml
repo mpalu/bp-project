@@ -1,0 +1,12 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: feed
+  namespace: app
+  labels:
+    app: feed
+spec:
+  selector:
+    matchLabels:
+      app: feed
+  maxUnavailable: 20%

@@ -1,0 +1,12 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: auth
+  namespace: app
+  labels:
+    app: auth
+spec:
+  selector:
+    matchLabels:
+      app: auth
+  maxUnavailable: 20%
