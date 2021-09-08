@@ -1,0 +1,18 @@
+app:
+  name: auth
+  version: 1.0
+containerTemplate:
+  image: mpalu/auth
+  imageTag: 1.0
+  port: 8037
+  resourcesLimitsCpu: 500m
+  resourcesLimitsMemory: 512Mi
+  resourcesRequestsCpu: 250m
+  resourcesRequestsMemory: 128Mi
+horizontalPodAutoscaler:
+  active: true
+  minReplicas: 1
+  maxReplicas: 5
+service:
+  type: ClusterIP
+  targetPort: 8037

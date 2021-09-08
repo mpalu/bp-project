@@ -1,0 +1,41 @@
+{{- with .Values -}}
+{{- if .service.active -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "bp.serviceName" $ }}
+  labels:
+    {{- include "bp.labels" $ | nindent 4 }}
+  {{ if .service.annotations -}}
+  annotations:
+    {{- toYaml .service.annotations | nindent 4}}
+    {{- if .service.additional.consulActive }}
+    consul.register/enabled: {{ .app.environment }}
+    {{- end }}
+  {{- end }}
+spec:
+  ports:
+  - name: main
+    port: {{ .service.port }}
+    protocol: {{ .service.protocol }}
+    targetPort: {{ .containerTemplate.port | default .service.targetPort  }}
+    {{- if and (eq .service.type "NodePort") (.service.nodePort) }}
+    nodePort: {{ .service.nodePort }}
+    {{- end }}
+  {{ if .service.secondPortActive -}}
+  - name: second
+    port: {{ .service.secondPort }}
+    protocol: {{ .service.secondProtocol }}
+    targetPort: {{ .service.secondTargetPort }}
+    {{ if eq .service.type "NodePort" -}}
+    nodePort: {{ .service.secondNodePort }}
+    {{- end }}
+  {{- end }}
+  {{ if .service.additionalPorts -}}
+  {{- toYaml .service.additionalPorts | nindent 2 }}
+  {{- end }}
+  selector:
+    {{- include "bp.selectorLabels" $ | nindent 4 }}
+  type: {{ .service.type }}
+{{- end -}}
+{{- end -}}

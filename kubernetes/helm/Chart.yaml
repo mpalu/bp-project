@@ -1,0 +1,5 @@
+apiVersion: v2
+name: skyris-deployment-skel
+description: Brasil Paralelo Helm Chart
+icon: https://d9hhrg4mnvzow.cloudfront.net/site.brasilparalelo.com.br/home/7b88f225-logofullweb_107001h01x01h000000000.png
+version: 1.0.0

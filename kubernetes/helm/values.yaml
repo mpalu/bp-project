@@ -1,0 +1,110 @@
+app:
+  name: null
+  version: null
+
+deployment:
+  active: true
+  annotations: {}
+  revisionHistoryLimit: 5
+  replicas: 1
+  strategyType: RollingUpdate
+  strategyMaxSurge: 1
+  strategyMaxUnavailable: 1
+  additional: {}
+
+podTemplate:
+  annotations: {}
+  serviceAccountName: ""
+  automountServiceAccountToken: false
+  volumes: []
+  imagePullSecrets: []
+  additional: {}
+
+containerTemplate:
+  image: busybox
+  imageTag: null
+  name: null
+  port: 9090
+  imagePullPolicy: Always
+  env: {}
+  envFrom: []
+  volumeMounts: []
+  command: []
+  args: []
+  resourcesRequestsCpu: 100m
+  resourcesRequestsMemory: 1Gi
+  resourcesLimitsCpu: 1
+  resourcesLimitsMemory: 1Gi
+  lifecycleActive: false
+  lifecyclePostStartCommand: []
+  lifecyclePreStopCommand: []
+  livenessProbeActive: false
+  livenessProbeType: http
+  livenessProbePath: /ping
+  livenessProbePort: null
+  livenessProbeInitialDelaySeconds: 10
+  livenessProbeInitialTimeoutSeconds: 1
+  livenessProbePeriodSeconds: 10
+  livenessProbeSuccessThreshold: 1
+  livenessProbeFailureThreshold: 3
+  livenessProbeCustom: {}
+  readinessProbeActive: true
+  readinessProbeType: http
+  readinessProbePath: /ping
+  readinessProbePort: null
+  readinessProbeInitialDelaySeconds: 10
+  readinessProbeInitialTimeoutSeconds: 1
+  readinessProbePeriodSeconds: 5
+  readinessProbeSuccessThreshold: 1
+  readinessProbeFailureThreshold: 3
+  readinessProbeCustom: {}
+  additional: {}
+
+podAntiAffinity:
+  active: true
+  required: false
+  weight: 100
+  topologyKeyHostname: kubernetes.io/hostname
+  topologyKeyZone: topology.kubernetes.io/zone
+
+service:
+  active: true
+  annotations: {}
+  type: NodePort
+  protocol: TCP
+  port: 80
+  targetPort: 3000
+  nodePort: 3100
+  additionalPorts: []
+  secondPortActive: false
+  secondPort: 53
+  secondProtocol: UDP
+  secondTargetPort: 5533
+  secondNodePort: null
+  additional: {}
+
+ingress:
+  active: false
+  name: null
+  annotations:
+    kubernetes.io/ingress.class: ambassador
+  rule:
+    host: null
+    path: /
+    serviceName: null
+    servicePort: 80
+  backend:
+    serviceName: tcp-fallback-service
+    servicePort: 8080
+
+podDisruptionBudget:
+  active: true
+  maxUnavailable: 20%
+
+horizontalPodAutoscaler:
+  active: true
+  annotations: {}
+  minReplicas: 1
+  maxReplicas: 20
+  targetCpuUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80

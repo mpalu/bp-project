@@ -1,0 +1,36 @@
+{{- with .Values -}}
+{{- if .horizontalPodAutoscaler.active -}}
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ template "bp.name" $ }}
+  labels:
+    {{- include "bp.labels" $ | nindent 4 }}
+  {{ if .horizontalPodAutoscaler.annotations -}}
+  annotations:
+    {{- toYaml .horizontalPodAutoscaler.annotations | nindent 4}}
+  {{ end }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ template "bp.name" $ }}
+  minReplicas: {{ .horizontalPodAutoscaler.minReplicas }}
+  maxReplicas: {{ .horizontalPodAutoscaler.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .horizontalPodAutoscaler.targetCpuUtilizationPercentage }}
+    {{- if .horizontalPodAutoscaler.targetMemoryUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ .horizontalPodAutoscaler.targetMemoryUtilizationPercentage }}
+    {{- end }}
+{{- end -}}
+{{- end -}}

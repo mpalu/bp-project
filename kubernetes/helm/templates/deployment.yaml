@@ -1,0 +1,170 @@
+{{- with .Values -}}
+{{- if .deployment.active -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "bp.name" $ }}
+  labels:
+    {{- include "bp.labels" $ | nindent 4 }}
+  {{ if .deployment.annotations -}}
+  annotations:
+    {{- toYaml .deployment.annotations | nindent 4}}
+  {{- end }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "bp.selectorLabels" $ | nindent 6 }}
+  replicas: {{ .deployment.replicas }}
+  revisionHistoryLimit: {{ .deployment.revisionHistoryLimit }}
+  strategy:
+    {{ if eq .deployment.strategyType "RollingUpdate" -}}
+    rollingUpdate:
+      maxSurge: {{ .deployment.strategyMaxSurge }}
+      maxUnavailable: {{ .deployment.strategyMaxUnavailable }}
+    {{- end }}
+    type: {{ .deployment.strategyType }}
+  {{ if .deployment.additional -}}
+  {{- toYaml .deployment.additional | nindent 2 }}
+  {{- end }}
+  template:
+    metadata:
+      labels:
+        {{- include "bp.labels" $ | nindent 8 }}
+      {{ if .podTemplate.annotations -}}
+      annotations:
+        {{- toYaml .podTemplate.annotations | nindent 8 }}
+      {{- end }}
+    spec:
+      {{- if .containerTemplate.additional.podAntiAffinityActive }}
+      affinity:
+        podAntiAffinity:
+        {{- if .containerTemplate.additional.podAntiAffinityRequired }}
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - weight: {{ .containerTemplate.additional.podAntiAffinityWeight }}
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: {{ template "bp.name" $ }}
+                  environment: {{ .app.environment }}
+              topologyKey: {{ .containerTemplate.additional.podAntiAffinityTopologyKey }}
+        {{- else }}
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: {{ .omniAdapterContainerTemplate.additional.podAntiAffinityWeight }}
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: {{ template "bp.name" $ }}
+                  environment: {{ .app.environment }}
+              topologyKey: {{ .omniAdapterContainerTemplate.additional.podAntiAffinityTopologyKeyHostname }}
+          - weight: {{ .omniAdapterContainerTemplate.additional.podAntiAffinityWeight }}
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: {{ template "bp.name" $ }}
+                  environment: {{ .app.environment }}
+              topologyKey: {{ .omniAdapterContainerTemplate.additional.podAntiAffinityTopologyKeyZone }}
+        {{- end }}
+      {{ end }}
+      serviceAccountName: {{ .podTemplate.serviceAccountName }}
+      automountServiceAccountToken: {{ .podTemplate.automountServiceAccountToken }}
+      {{ if .podTemplate.nodeSelector -}}
+      nodeSelector:
+        {{- toYaml .podTemplate.nodeSelector | nindent 8 }}
+      {{- end }}
+      {{ if .podTemplate.volumes -}}
+      volumes:
+      {{- toYaml .podTemplate.volumes | nindent 8 }}
+      {{- end }}
+      {{ if .podTemplate.imagePullSecrets -}}
+      imagePullSecrets:
+        {{ range $val := .podTemplate.imagePullSecrets -}}
+        - name: {{ $val | quote }}
+        {{- end -}}
+      {{- end }}
+      containers:
+        - image: {{ template "bp.containerImage" $ }}
+          name: {{ .containerTemplate.name | default (printf "%s" (include "bp.name" $)) }}
+          ports:
+            - containerPort: {{ .containerTemplate.port }}
+          imagePullPolicy: {{ .containerTemplate.imagePullPolicy }}
+          {{- if .containerTemplate.command }}
+          command:
+            {{- toYaml .containerTemplate.command | nindent 12 }}
+          args:
+            {{- toYaml .containerTemplate.args | nindent 12 }}
+          {{- end }}
+          resources:
+            requests:
+              cpu: {{ .containerTemplate.resourcesRequestsCpu }}
+              memory: {{ .containerTemplate.resourcesRequestsMemory }}
+            limits:
+              cpu: {{ .containerTemplate.resourcesLimitsCpu }}
+              memory: {{ .containerTemplate.resourcesLimitsMemory }}
+          {{ if .containerTemplate.lifecycleActive -}}
+          lifecycle:
+            {{ if .containerTemplate.lifecyclePostStartCommand -}}
+            postStart:
+              exec:
+                command:
+                {{- toYaml .containerTemplate.lifecyclePostStartCommand | nindent 16 }}
+            {{- end }}
+            {{ if .containerTemplate.lifecyclePreStopCommand -}}
+            preStop:
+              exec:
+                command:
+                {{- toYaml .containerTemplate.lifecyclePreStopCommand | nindent 16 }}
+            {{- end }}
+          {{- end }}
+          env:
+          {{- if .containerTemplate.additional.envKey }}
+            - name: {{ .containerTemplate.additional.envKey }}
+              value: {{ .app.environment }}
+          {{- end }}
+          {{- if .containerTemplate.additional.nodeEnvKey }}
+            - name: {{ .containerTemplate.additional.nodeEnvKey }}
+              value: {{ .app.environment }}
+          {{- end }}
+          {{- if .containerTemplate.env }}
+            {{- range $key, $val := .containerTemplate.env }}
+            - name: {{ $key }}
+              value: {{ $val | quote }}
+            {{- end }}
+          {{- end }}
+          {{ if .containerTemplate.envFrom -}}
+          envFrom:
+            {{- toYaml .containerTemplate.envFrom | nindent 12 }}
+          {{- end }}
+          {{ if .containerTemplate.readinessProbeActive -}}
+          readinessProbe:
+            {{ if eq .containerTemplate.readinessProbeType "http" -}}
+            httpGet:
+              path: {{ .containerTemplate.readinessProbePath }}
+              port: {{ .containerTemplate.readinessProbePort | default .containerTemplate.port }}
+            initialDelaySeconds: {{ .containerTemplate.readinessProbeInitialDelaySeconds }}
+            periodSeconds: {{ .containerTemplate.readinessProbePeriodSeconds }}
+            successThreshold: {{ .containerTemplate.readinessProbeSuccessThreshold }}
+            failureThreshold: {{ .containerTemplate.readinessProbeFailureThreshold }}
+            {{- else -}}
+            {{- toYaml .containerTemplate.readinessProbeCustom | nindent 12 }}
+            {{- end }}
+          {{- end }}
+          {{ if .containerTemplate.livenessProbeActive -}}
+          livenessProbe:
+            {{ if eq .containerTemplate.livenessProbeType "http" -}}
+            httpGet:
+              path: {{ .containerTemplate.livenessProbePath }}
+              port: {{ .containerTemplate.livenessProbePort | default .containerTemplate.port }}
+            initialDelaySeconds: {{ .containerTemplate.livenessProbeInitialDelaySeconds }}
+            periodSeconds: {{ .containerTemplate.livenessProbePeriodSeconds }}
+            successThreshold: {{ .containerTemplate.livenessProbeSuccessThreshold }}
+            failureThreshold: {{ .containerTemplate.livenessProbeFailureThreshold }}
+            {{- else -}}
+            {{- toYaml .containerTemplate.livenessProbeCustom | nindent 12 }}
+            {{- end }}
+          {{- end }}
+          {{ if .containerTemplate.volumeMounts -}}
+          volumeMounts:
+          {{- toYaml .containerTemplate.volumeMounts | nindent 10 }}
+          {{- end }}
+{{- end -}}
+{{- end -}}

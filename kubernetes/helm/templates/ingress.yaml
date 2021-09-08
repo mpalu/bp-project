@@ -1,0 +1,34 @@
+{{- with .Values -}}
+{{- if .ingress.active -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ template "bp.ingressName" $ }}
+  labels:
+    {{- include "bp.labels" $ | nindent 4 }}
+  {{- if .ingress.annotations }}
+  annotations:
+    {{- toYaml .ingress.annotations | nindent 4}}
+  {{- end }}
+spec:
+  {{- if .ingress.backend }}
+  backend:
+    serviceName: {{ .ingress.backend.serviceName }}
+    servicePort: {{ .ingress.backend.servicePort }}
+  {{- end }}
+  rules: {{- if not .ingress.rule }} []{{ else }}
+  {{- if not .ingress.rule.host }}
+  - host: {{ .ingress.rule.host }}
+  {{- end}}
+  - http:
+      paths:
+      - path: {{ .ingress.rule.path }}
+        pathType: {{ .ingress.rule.pathType }}
+        backend:
+          service: 
+            name: {{ include "bp.serviceName" $  }}
+            port: 
+              number: {{ .ingress.rule.servicePort }}
+  {{- end }}
+{{- end -}}
+{{- end -}}
