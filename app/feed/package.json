@@ -18,7 +18,7 @@
     "content-type": "^1.0.4",
     "cookies": "^0.8.0",
     "lru": "^3.1.0",
-    "nodemon": "^2.0.20",
+    "nodemon": "^3.1.9",
     "random-bytes": "^1.0.0",
     "xhr2": "^0.2.1",
     "xmlhttprequest": "^1.8.0",
